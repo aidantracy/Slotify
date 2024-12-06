@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slotify - Profile</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script>
+        function updateProfileDisplay(event) {
+            event.preventDefault();
+            document.getElementById("display-user-name").textContent = document.getElementById("user-name").value;
+            document.getElementById("display-user-address").textContent = document.getElementById("user-address").value;
+            document.getElementById("display-user-email").textContent = document.getElementById("user-email").value;
+            document.getElementById("display-user-phone").textContent = document.getElementById("user-phone").value;
+            document.getElementById("display-user-company").textContent = document.getElementById("user-company").value;
+        }
+    </script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav>
+        <img src="../img/white-logo.png" alt="Slotify logo">
+        <ul>
+            <li><a href="../index.html" class="nav-button">Home</a></li>
+            <li><a href="eventPage.html" class="nav-button">My Meetings</a></li>
+            <li><a href="aboutUs.html" class="nav-button">About Us</a></li>
+        </ul>
+    </nav>
+  
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Form Container -->
+        <div class="form-container">
+            <h1>My Profile</h1>
+            <form action="#" method="post" onsubmit="submitUserForm(event)">
+                <div>
+                    <label for="user-name">Name</label>
+                    <input type="text" id="user-name" name="user-name" required>
+                </div>
+                <div>
+                    <label for="user-address">Address</label>
+                    <textarea id="user-address" name="user-address" rows="3" required></textarea>
+                </div>
+                <div>
+                    <label for="user-email">Email</label>
+                    <input type="email" id="user-email" name="user-email" required>
+                </div>
+                <div>
+                    <label for="user-phone">Phone Number</label>
+                    <input type="tel" id="user-phone" name="user-phone" required>
+                </div>
+                <div>
+                    <label for="user-company">Company</label>
+                    <input type="text" id="user-company" name="user-company">
+                </div>
+                <div>
+                    <button type="submit" class="submit-btn">Update Profile</button>
+                </div>
+            </form>
+        </div>
+  
+        <!-- Information Display Container -->
+        <div class="info-container">
+            <h2>Profile Information</h2>
+            <p><strong>Name:</strong> <span id="display-user-name"></span></p>
+            <p><strong>Address:</strong> <span id="display-user-address"></span></p>
+            <p><strong>Email:</strong> <span id="display-user-email"></span></p>
+            <p><strong>Phone Number:</strong> <span id="display-user-phone"></span></p>
+            <p><strong>Company:</strong> <span id="display-user-company"></span></p>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+  async function submitUserForm(event) {
+    event.preventDefault(); 
+
+    const name = document.getElementById("user-name").value;
+    const address = document.getElementById("user-address").value;
+    const email = document.getElementById("user-email").value;
+    const phone = document.getElementById("user-phone").value;
+    const company = document.getElementById("user-company").value;
+
+    document.getElementById("display-user-name").textContent = name;
+    document.getElementById("display-user-address").textContent = address;
+    document.getElementById("display-user-email").textContent = email;
+    document.getElementById("display-user-phone").textContent = phone;
+    document.getElementById("display-user-company").textContent = company;
+
+
+    try {
+      const response = await fetch('http://localhost:5500/add-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address, email, phone, company }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save user data');
+      }
+
+      alert('Profile updated successfully!');
+      console.log('Server response:', result);
+
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred: ' + error.message);
+    }
+  }
+</script>

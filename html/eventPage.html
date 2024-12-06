@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slotify - My Events</title>
+    <link rel="stylesheet" href="../css/eventPage.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav>
+        <img src="../img/white-logo.png" alt="Slotify logo">
+        <ul>
+            <li><a href="../index.html" class="nav-button">Home</a></li>
+            <li><a href="profile.html" class="nav-button">Profile</a></li>
+            <li><a href="aboutUs.html" class="nav-button">About Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="events-section">
+            <h1>My Current Events</h1>
+            <!-- <div class="event-card">
+                <h2>Team Meeting</h2>
+                <p><strong>Date:</strong> 2024-12-01</p>
+                <p><strong>Time:</strong> 10:00 AM</p>
+                <p><strong>Location:</strong> Zoom</p>
+            </div>
+            <div class="event-card">
+                <h2>Project Deadline</h2>
+                <p><strong>Date:</strong> 2024-12-05</p>
+                <p><strong>Time:</strong> 2:00 PM</p>
+                <p><strong>Location:</strong> Office</p>
+            </div>
+            <div class="event-card">
+                <h2>Client Presentation</h2>
+                <p><strong>Date:</strong> 2024-12-10</p>
+                <p><strong>Time:</strong> 3:00 PM</p>
+                <p><strong>Location:</strong> Conference Room B</p>
+            </div> -->
+
+            <div id="dynamic-events"></div>
+            <script>
+                async function fetchBookings() {
+                    try {
+                        const response = await fetch('http://3.16.130.244/get-bookings');
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch bookings');
+                        }
+                        const bookings = await response.json();
+
+                        // Insert into dynamic-events
+                        const dynamicEventsContainer = document.getElementById('dynamic-events');
+                        bookings.forEach(booking => {
+                            const eventCard = document.createElement('div');
+                            eventCard.classList.add('event-card');
+                            eventCard.innerHTML = `
+                                <h2>${booking.first_name} ${booking.last_name}'s Booking</h2>
+                                <p><strong>Date:</strong> ${booking.date}</p>
+                                <p><strong>Time:</strong> ${booking.start_time}</p>
+                                <p><strong>Location:</strong> ${booking.email_address}</p>
+                            `;
+                            dynamicEventsContainer.appendChild(eventCard);
+                        });
+                    } catch (error) {
+                        console.error('Error fetching bookings:', error);
+                    }
+                }
+                fetchBookings();
+            </script>
+        </div>
+    </div>
+</body>
+</html>

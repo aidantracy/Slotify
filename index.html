@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slotify</title>
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav>
+        <img src="../img/white-logo.png" alt="Slotify logo">
+        <ul>
+            <li><a href="html/profile.html" class="nav-button">Profile</a></li>
+            <li><a href="html/eventPage.html" class="nav-button">My Meetings</a></li>
+            <li><a href="html/aboutUs.html" class="nav-button">About Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="calendar-slots">
+        <div class="calendar">
+            <div class="calendar-header">
+                <button id="prev-month">&#9664;</button>
+                <div id="month-year"></div>
+                <button id="next-month">&#9654;</button>
+            </div>
+            <div class="calendar-day-grid">
+                <div class="day-name">Sun</div>
+                <div class="day-name">Mon</div>
+                <div class="day-name">Tue</div>
+                <div class="day-name">Wed</div>
+                <div class="day-name">Thu</div>
+                <div class="day-name">Fri</div>
+                <div class="day-name">Sat</div>
+            </div>
+            <div id="calendar-days" class="calendar-grid"></div>
+        </div>
+        <div class="available-slots" id="available-slots">
+          <ul id="time-slot-list">
+            <!-- Time slots will go here -->
+          </ul>
+        </div>
+        <div class="confirm-form" id="confirm-form">
+          <div class="booking-header">
+            <button id="back-arrow" class="back-arrow" onclick="goBack()">
+              &LT;
+            </button>
+            Confirm Booking
+          </div>
+          <div id="selected-slot-details" class="selected-slot-details"></div>
+          <div class="booking-info">
+            <p>Please enter your details to confirm the booking</p>
+          <form id="booking-form">
+            <div class="form-group">
+                <label for="last-name">First Name:</label>
+                <input class="input" type="text" id="last-name" name="name" required>
+            </div>
+            <div class="form-group">
+              <label for="first-name">Last Name:</label>
+              <input class="input" type="text" id="first-name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input class="input" type="email" id="email" name="email" required>
+            </div>
+            <button class="confirm-booking" onclick="confirmBooking()" type="submit">Confirm Booking</button>
+          </form>
+        </div>
+    </div>
+
+    <script>
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+
+        // Render the calendar
+        function renderCalendar() {
+            const daysContainer = document.getElementById("calendar-days");
+            const monthYear = document.getElementById("month-year");
+
+            daysContainer.innerHTML = ""; // Clear previous days
+            monthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            // Add empty divs for the days before the 1st day of the month
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                daysContainer.innerHTML += `<div class="day empty"></div>`;
+            }
+
+            // Add day numbers to the calendar
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('day');
+                dayElement.textContent = day;
+
+                // Attach event listener for day selection
+                dayElement.addEventListener('click', function() {
+                    selectDay(dayElement, day);
+                    console.log('test');
+                });
+
+                daysContainer.appendChild(dayElement);
+            }
+        }
+
+        // Open the confirm booking form
+        function openConfirmForm(slot) {
+            const modal = document.getElementById("slotModal");
+            const slotDetails = document.getElementById("selected-slot-details");
+            const availableSlots = document.getElementById("available-slots");
+            const confirmForm = document.getElementById("confirm-form");
+
+            // Reverse visibility
+            availableSlots.style.display = "none";
+            confirmForm.style.display = "block";
+            
+
+            // Set the selected slot details in the modal
+            slotDetails.textContent = `${slot}`;
+        }
+
+        // Function to select a day and fetch available slots
+        async function selectDay(element, day) {
+            // Deselect any previously selected day
+            document.querySelectorAll(".day").forEach(day => day.classList.remove("selected-day"));
+            element.classList.add("selected-day");
+
+            const selectedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+
+            // Fetch available time slots from the server
+            try {
+                const response = await fetch(`http://3.16.130.244/get-available-slots?date=${selectedDate}`);
+                if (!response.ok) throw new Error("Failed to fetch available slots");
+
+                const availableSlots = await response.json();
+                displayAvailableSlots(availableSlots);
+            } catch (error) {
+                console.error("Error fetching available slots:", error);
+            }
+            const availableSlots = document.getElementById("available-slots");
+            const confirmForm = document.getElementById("confirm-form");
+
+            availableSlots.style.display = "block";
+            confirmForm.style.display = "none";
+        }
+
+        function goBack() {
+            const availableSlots = document.getElementById("available-slots");
+            const confirmForm = document.getElementById("confirm-form");
+
+            availableSlots.style.display = "block";
+            confirmForm.style.display = "none";
+        }
+
+        // Display available slots in the list
+        function displayAvailableSlots(slots) {
+            const timeSlotList = document.getElementById("time-slot-list");
+            timeSlotList.innerHTML = ""; // Clear previous slots
+
+            if (slots.length === 0) {
+                timeSlotList.innerHTML = "<li class='time-slot'>No available slots for this day</li>";
+                return;
+            }
+
+            slots.forEach(slot => {
+                const listItem = document.createElement("li");
+                listItem.classList.add("time-slot");
+                listItem.textContent = `${slot}`;
+                
+                // Add event listener for the list item
+                listItem.addEventListener("click", () => openConfirmForm(listItem.textContent)); // Pass the slot to the modal
+                timeSlotList.appendChild(listItem);
+            });
+        }
+		
+        function confirmBooking () {
+            const bookingForm = document.getElementById("booking-form");
+            bookingForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const first_name = document.getElementById("first-name").value;
+                const last_name = document.getElementById("last-name").value;
+                const day = document.querySelector(".selected-day").textContent;
+                const email_address = document.getElementById("email").value;
+                const start_time = document.getElementById("selected-slot-details").textContent; // Get the selected military time slot
+                const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                
+                // Clear the form fields
+                bookingForm.reset();
+
+                // Close the confirm booking form
+                const availableSlots = document.getElementById("available-slots");
+                const confirmForm = document.getElementById("confirm-form");
+                confirmForm.style.display = "none";
+                availableSlots.style.display = "block";
+                selectDay(document.querySelector(".selected-day"), day);
+                
+                // Send the booking details to the server
+                try {
+                    const response = await fetch(`http://3.16.130.244/add-booking?first_name=${first_name}&last_name=${last_name}&email_address=${email_address}&date=${date}&start_time=${start_time}`);
+
+                    if (!response.ok) throw new Error("Failed to confirm booking");
+                    alert("Booking confirmed successfully!");
+                } catch (error) {
+                    console.error("Error confirming booking:", error);
+                }
+            });
+        }
+
+
+
+
+
+        // Navigate to the previous month
+        document.getElementById("prev-month").addEventListener("click", () => {
+            currentMonth = (currentMonth - 1 + 12) % 12;
+            if (currentMonth === 11) currentYear--;
+            renderCalendar();
+        });
+
+        // Navigate to the next month
+        document.getElementById("next-month").addEventListener("click", () => {
+            currentMonth = (currentMonth + 1) % 12;
+            if (currentMonth === 0) currentYear++;
+            renderCalendar();
+        });
+
+        // Initialize the calendar on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>

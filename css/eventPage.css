@@ -1,0 +1,92 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%; 
+}
+
+body {
+    background-image: url("../img/gradient-image.png");
+    background-size: cover;  
+    background-position: center;  
+    background-repeat: no-repeat;  
+    background-attachment: fixed; 
+    font-family: 'Inter', sans-serif;
+    color: white;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 25px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.0); 
+}
+
+nav img {
+    height: 35px; 
+}
+
+nav ul {
+    display: flex;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin-left: 20px; 
+}
+
+.nav-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.1); 
+    color: white;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.4); 
+    border-radius: 5px; 
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.nav-button:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.container {
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    flex-direction: column; 
+    height: 100%;
+    gap: 20px;
+}
+
+.events-section {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    width: 80%;
+    max-width: 800px;
+    color: black;
+}
+
+.event-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    padding: 15px;
+}
+
+.event-card h2 {
+    margin: 0;
+    color: #007BFF;
+}
+
+.event-card p {
+    margin: 5px 0;
+    color: #333;
+}
