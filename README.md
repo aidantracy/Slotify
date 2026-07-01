@@ -28,20 +28,46 @@ Access the [Scrum Linter Report](https://scrumlinter.boisestate.edu/CS471F24Scru
 We researched how to deploy the site online. We looked at using both AWS and GitHub Pages.
 We decided that GitHub Pages was the best, easiest option., so we setup the repository to work with them.
 
-### Testing
-To run the JavaScript tests:
-- Open VSCode, click on the explorer ribbon on the left hand side to show the file hierarchy. 
-- Right click on test.html and click on "show preview" to display results
-- (note: you must have the "live preview" extension by microsoft in VSCode)
+## Tech Stack
+- **Frontend:** static HTML, CSS, and vanilla JavaScript
+- **Backend:** Node.js + Express (`js/backend.js`)
+- **Database:** SQLite via [libSQL](https://github.com/tursodatabase/libsql) (`@libsql/client`) — a local file in development, [Turso](https://turso.tech) in production
 
-### Access Website
-Site live at: [http://slottify.xyz](http://slottify.xyz)
+## Running Locally
+1. Install dependencies:
+   ```
+   npm install
+   ```
+2. Create your environment file:
+   ```
+   cp .env.example .env
+   ```
+   The defaults use a local SQLite file (`slotify.db`), so no extra setup is needed.
+3. Start the server (it creates the database and tables automatically on first run):
+   ```
+   npm start
+   ```
+4. Open http://localhost:3000 in your browser.
 
-work in progress: 
+The backend serves the frontend and the API from the same port, so a single
+`npm start` runs the whole app.
 
-https://peaceful-dusk-76850-369ebebd7d80.herokuapp.com/
+### Configuration
+- `js/config.js` sets `API_BASE_URL`, the backend the frontend talks to
+  (`http://localhost:3000` locally; your deployed URL in production).
+- `.env` holds backend settings (`DATABASE_URL`, optional `PORT`). It is
+  git-ignored; `.env.example` documents the available values.
 
-https://slotify-0c3b06f3bb46.herokuapp.com/
+## Database
+The schema (`users`, `bookings`, `time_intervals`) is created automatically by
+`js/db.js` on startup, and a default "Demo Provider" is seeded so the booking
+flow works before real accounts exist.
+
+## Deployment
+The same code deploys to any Node host. For a free, always-on database, point
+`DATABASE_URL`/`DATABASE_AUTH_TOKEN` at a [Turso](https://turso.tech) database
+(its free tier does not sleep). Because it's libSQL, no code changes are needed —
+only the connection string.
 
 
 

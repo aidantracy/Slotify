@@ -1,1 +1,1 @@
-web: node js/backend.js
+web: node --env-file-if-exists=.env js/backend.js

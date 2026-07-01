@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slotify - Profile</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/config.js"></script>
     <script>
         function updateProfileDisplay(event) {
             event.preventDefault();
@@ -90,7 +91,7 @@
 
 
     try {
-      const response = await fetch('http://localhost:5500/add-user', {
+      const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/add-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, address, email, phone, company }),

@@ -8,11 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/config.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
     <nav>
-        <img src="../img/white-logo.png" alt="Slotify logo">
+        <img src="img/white-logo.png" alt="Slotify logo">
         <ul>
             <li><a href="html/profile.html" class="nav-button">Profile</a></li>
             <li><a href="html/eventPage.html" class="nav-button">My Meetings</a></li>
@@ -56,18 +57,18 @@
             <p>Please enter your details to confirm the booking</p>
           <form id="booking-form">
             <div class="form-group">
-                <label for="last-name">First Name:</label>
-                <input class="input" type="text" id="last-name" name="name" required>
+                <label for="first-name">First Name:</label>
+                <input class="input" type="text" id="first-name" name="first-name" required>
             </div>
             <div class="form-group">
-              <label for="first-name">Last Name:</label>
-              <input class="input" type="text" id="first-name" name="name" required>
+              <label for="last-name">Last Name:</label>
+              <input class="input" type="text" id="last-name" name="last-name" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
                 <input class="input" type="email" id="email" name="email" required>
             </div>
-            <button class="confirm-booking" onclick="confirmBooking()" type="submit">Confirm Booking</button>
+            <button class="confirm-booking" type="submit">Confirm Booking</button>
           </form>
         </div>
     </div>
@@ -137,8 +138,11 @@
 
             // Fetch available time slots from the server
             try {
-                const response = await fetch(`http://3.16.130.244/get-available-slots?date=${selectedDate}`);
-                if (!response.ok) throw new Error("Failed to fetch available slots");
+                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/get-available-slots?date=${selectedDate}`);
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(body.error || `Server returned ${response.status}`);
+                }
 
                 const availableSlots = await response.json();
                 displayAvailableSlots(availableSlots);
@@ -181,39 +185,41 @@
             });
         }
 		
-        function confirmBooking () {
+        // Submit handler for the booking form. Attached once on page load
+        // (see DOMContentLoaded below) so it can't bind multiple times.
+        async function handleBookingSubmit(event) {
+            event.preventDefault();
+
             const bookingForm = document.getElementById("booking-form");
-            bookingForm.addEventListener("submit", async (event) => {
-                event.preventDefault();
+            const first_name = document.getElementById("first-name").value;
+            const last_name = document.getElementById("last-name").value;
+            const day = document.querySelector(".selected-day").textContent;
+            const email_address = document.getElementById("email").value;
+            const start_time = document.getElementById("selected-slot-details").textContent; // Selected time slot
+            const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-                const first_name = document.getElementById("first-name").value;
-                const last_name = document.getElementById("last-name").value;
-                const day = document.querySelector(".selected-day").textContent;
-                const email_address = document.getElementById("email").value;
-                const start_time = document.getElementById("selected-slot-details").textContent; // Get the selected military time slot
-                const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            // Clear the form fields
+            bookingForm.reset();
 
-                
-                // Clear the form fields
-                bookingForm.reset();
+            // Close the confirm booking form
+            const availableSlots = document.getElementById("available-slots");
+            const confirmForm = document.getElementById("confirm-form");
+            confirmForm.style.display = "none";
+            availableSlots.style.display = "block";
+            selectDay(document.querySelector(".selected-day"), day);
 
-                // Close the confirm booking form
-                const availableSlots = document.getElementById("available-slots");
-                const confirmForm = document.getElementById("confirm-form");
-                confirmForm.style.display = "none";
-                availableSlots.style.display = "block";
-                selectDay(document.querySelector(".selected-day"), day);
-                
-                // Send the booking details to the server
-                try {
-                    const response = await fetch(`http://3.16.130.244/add-booking?first_name=${first_name}&last_name=${last_name}&email_address=${email_address}&date=${date}&start_time=${start_time}`);
+            // Send the booking details to the server
+            try {
+                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/add-booking?first_name=${first_name}&last_name=${last_name}&email_address=${email_address}&date=${date}&start_time=${start_time}`);
 
-                    if (!response.ok) throw new Error("Failed to confirm booking");
-                    alert("Booking confirmed successfully!");
-                } catch (error) {
-                    console.error("Error confirming booking:", error);
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(body.error || `Server returned ${response.status}`);
                 }
-            });
+                alert("Booking confirmed successfully!");
+            } catch (error) {
+                console.error("Error confirming booking:", error);
+            }
         }
 
 
@@ -237,6 +243,7 @@
         // Initialize the calendar on page load
         document.addEventListener("DOMContentLoaded", () => {
             renderCalendar();
+            document.getElementById("booking-form").addEventListener("submit", handleBookingSubmit);
         });
     </script>
 </body>

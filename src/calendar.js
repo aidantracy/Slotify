@@ -75,10 +75,10 @@ class Calendar {
                 return true
             } else if (current.start <= startTime && current.end >= startTime && current.date === date) {
                 return true
-            } else { // No conflict
-                return false
             }
+            // no conflict with this slot; keep checking the rest
         }
+        return false // no conflict found in any slot
     }
 
     toString() {
@@ -133,6 +133,8 @@ class Calendar {
 
 }
 
-Calendar.main();
+// Note: Calendar.main() is a manual test harness. It is intentionally NOT
+// called here so importing this module has no side effects. Run it explicitly
+// from a test if needed.
 
 export default Calendar;

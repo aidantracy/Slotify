@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slotify - My Events</title>
     <link rel="stylesheet" href="../css/eventPage.css">
+    <script src="../js/config.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -42,32 +43,146 @@
 
             <div id="dynamic-events"></div>
             <script>
-                async function fetchBookings() {
-                    try {
-                        const response = await fetch('http://3.16.130.244/get-bookings');
-                        if (!response.ok) {
-                            throw new Error('Failed to fetch bookings');
+                const API = window.SLOTIFY_CONFIG.API_BASE_URL;
+                const container = document.getElementById('dynamic-events');
+
+                // Escape user-provided text before inserting it into HTML.
+                function esc(value) {
+                    return String(value ?? '')
+                        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                }
+
+                // Build the 7 AM–8 PM, 30-minute time slots (same format the API uses).
+                function timeSlots() {
+                    const slots = [];
+                    for (let hour = 7; hour < 20; hour++) {
+                        const h = hour % 12 === 0 ? 12 : hour % 12;
+                        const suffix = hour >= 12 ? 'PM' : 'AM';
+                        for (const min of [0, 30]) {
+                            slots.push(`${h}:${min === 0 ? '00' : '30'} ${suffix}`);
                         }
+                    }
+                    return slots;
+                }
+
+                async function loadBookings() {
+                    container.innerHTML = '';
+                    try {
+                        const response = await fetch(`${API}/get-bookings`);
+                        if (!response.ok) throw new Error('Failed to fetch bookings');
                         const bookings = await response.json();
 
-                        // Insert into dynamic-events
-                        const dynamicEventsContainer = document.getElementById('dynamic-events');
-                        bookings.forEach(booking => {
-                            const eventCard = document.createElement('div');
-                            eventCard.classList.add('event-card');
-                            eventCard.innerHTML = `
-                                <h2>${booking.first_name} ${booking.last_name}'s Booking</h2>
-                                <p><strong>Date:</strong> ${booking.date}</p>
-                                <p><strong>Time:</strong> ${booking.start_time}</p>
-                                <p><strong>Location:</strong> ${booking.email_address}</p>
-                            `;
-                            dynamicEventsContainer.appendChild(eventCard);
-                        });
+                        if (bookings.length === 0) {
+                            container.innerHTML = '<p class="empty-state">You have no meetings yet.</p>';
+                            return;
+                        }
+                        bookings.forEach(renderCard);
                     } catch (error) {
                         console.error('Error fetching bookings:', error);
+                        container.innerHTML = '<p class="empty-state">Could not load meetings. Is the server running?</p>';
                     }
                 }
-                fetchBookings();
+
+                function renderCard(booking) {
+                    const card = document.createElement('div');
+                    card.classList.add('event-card');
+                    showView(card, booking);
+                    container.appendChild(card);
+                }
+
+                // Read-only view of a booking, with Edit and Cancel buttons.
+                function showView(card, booking) {
+                    card.innerHTML = `
+                        <h2>${esc(booking.first_name)} ${esc(booking.last_name)}'s Booking</h2>
+                        <p><strong>Date:</strong> ${esc(booking.date)}</p>
+                        <p><strong>Time:</strong> ${esc(booking.start_time)}</p>
+                        <p><strong>Email:</strong> ${esc(booking.email_address)}</p>
+                        <div class="card-actions">
+                            <button class="btn btn-edit">Edit</button>
+                            <button class="btn btn-cancel">Cancel</button>
+                        </div>
+                    `;
+                    card.querySelector('.btn-edit').addEventListener('click', () => showEdit(card, booking));
+                    card.querySelector('.btn-cancel').addEventListener('click', () => cancelBooking(card, booking));
+                }
+
+                // Inline edit form for a booking, with Save and Discard buttons.
+                function showEdit(card, booking) {
+                    const options = timeSlots()
+                        .map(t => `<option value="${t}" ${t === booking.start_time ? 'selected' : ''}>${t}</option>`)
+                        .join('');
+                    card.innerHTML = `
+                        <div class="edit-form">
+                            <label>First name
+                                <input type="text" class="edit-first" value="${esc(booking.first_name)}">
+                            </label>
+                            <label>Last name
+                                <input type="text" class="edit-last" value="${esc(booking.last_name)}">
+                            </label>
+                            <label>Email
+                                <input type="email" class="edit-email" value="${esc(booking.email_address)}">
+                            </label>
+                            <label>Date
+                                <input type="date" class="edit-date" value="${esc(booking.date)}">
+                            </label>
+                            <label>Time
+                                <select class="edit-time">${options}</select>
+                            </label>
+                            <div class="card-actions">
+                                <button class="btn btn-save">Save</button>
+                                <button class="btn btn-discard">Discard</button>
+                            </div>
+                        </div>
+                    `;
+                    card.querySelector('.btn-save').addEventListener('click', () => saveBooking(card, booking));
+                    card.querySelector('.btn-discard').addEventListener('click', () => showView(card, booking));
+                }
+
+                async function saveBooking(card, booking) {
+                    const updated = {
+                        first_name: card.querySelector('.edit-first').value.trim(),
+                        last_name: card.querySelector('.edit-last').value.trim(),
+                        email_address: card.querySelector('.edit-email').value.trim(),
+                        date: card.querySelector('.edit-date').value,
+                        start_time: card.querySelector('.edit-time').value,
+                    };
+                    if (!updated.first_name || !updated.last_name || !updated.email_address || !updated.date) {
+                        alert('Please fill in every field.');
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`${API}/bookings/${booking.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updated),
+                        });
+                        const body = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(body.error || `Server returned ${response.status}`);
+                        showView(card, { ...booking, ...updated });
+                    } catch (error) {
+                        console.error('Error updating booking:', error);
+                        alert('Could not save changes: ' + error.message);
+                    }
+                }
+
+                async function cancelBooking(card, booking) {
+                    if (!confirm(`Cancel ${booking.first_name} ${booking.last_name}'s booking on ${booking.date}?`)) return;
+                    try {
+                        const response = await fetch(`${API}/bookings/${booking.id}`, { method: 'DELETE' });
+                        const body = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(body.error || `Server returned ${response.status}`);
+                        card.remove();
+                        if (container.children.length === 0) {
+                            container.innerHTML = '<p class="empty-state">You have no meetings yet.</p>';
+                        }
+                    } catch (error) {
+                        console.error('Error cancelling booking:', error);
+                        alert('Could not cancel booking: ' + error.message);
+                    }
+                }
+
+                loadBookings();
             </script>
         </div>
     </div>
