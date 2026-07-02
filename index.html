@@ -9,17 +9,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
     <nav>
         <img src="img/white-logo.png" alt="Slotify logo">
         <ul>
-            <li><a href="html/profile.html" class="nav-button">Profile</a></li>
-            <li><a href="html/eventPage.html" class="nav-button">My Meetings</a></li>
             <li><a href="html/aboutUs.html" class="nav-button">About Us</a></li>
+            <li class="auth-only"><a href="html/profile.html" class="nav-button">Profile</a></li>
+            <li class="auth-only"><a href="html/eventPage.html" class="nav-button">My Meetings</a></li>
+            <li class="auth-only"><a href="index.html" id="logout-link" class="nav-button">Log Out</a></li>
+            <li class="guest-only"><a href="html/login.html" class="nav-button">Log In</a></li>
+            <li class="guest-only"><a href="html/signup.html" class="nav-button">Sign Up</a></li>
         </ul>
     </nav>
+
+    <!-- Choose who to book with -->
+    <div class="provider-bar">
+        <label for="provider-select">Book a meeting with:</label>
+        <select id="provider-select">
+            <option value="">-- Select a user --</option>
+        </select>
+    </div>
 
     <!-- Main Container -->
     <div class="calendar-slots">
@@ -65,12 +77,29 @@
               <input class="input" type="text" id="last-name" name="last-name" required>
             </div>
             <div class="form-group">
-                <label for="email">Email:</label>
+                <label for="email">Which email should we send the meeting details to?</label>
                 <input class="input" type="email" id="email" name="email" required>
             </div>
             <button class="confirm-booking" type="submit">Confirm Booking</button>
           </form>
+          </div>
         </div>
+
+        <aside class="booking-info-panel">
+            <h2>How it works</h2>
+            <ol class="steps">
+                <li>Choose who you'd like to meet with.</li>
+                <li>Pick a day on the calendar.</li>
+                <li>Select an open time slot.</li>
+                <li>Add your details to confirm &mdash; you'll both get an email.</li>
+            </ol>
+            <div class="booking-summary">
+                <h3>Your selection</h3>
+                <p><strong>With:</strong> <span id="summary-provider">&mdash;</span></p>
+                <p><strong>Date:</strong> <span id="summary-date">&mdash;</span></p>
+                <p><strong>Time:</strong> <span id="summary-time">&mdash;</span></p>
+            </div>
+        </aside>
     </div>
 
     <script>
@@ -78,6 +107,7 @@
 
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
+        let providerDays = null; // weekdays (0-6) the selected provider offers; null = no provider chosen
 
         // Render the calendar
         function renderCalendar() {
@@ -101,11 +131,16 @@
                 dayElement.classList.add('day');
                 dayElement.textContent = day;
 
-                // Attach event listener for day selection
-                dayElement.addEventListener('click', function() {
-                    selectDay(dayElement, day);
-                    console.log('test');
-                });
+                // Grey out days the selected provider doesn't offer.
+                const weekday = new Date(currentYear, currentMonth, day).getDay();
+                const unavailable = providerDays && !providerDays.includes(weekday);
+                if (unavailable) {
+                    dayElement.classList.add('day-unavailable');
+                } else {
+                    dayElement.addEventListener('click', function() {
+                        selectDay(dayElement, day);
+                    });
+                }
 
                 daysContainer.appendChild(dayElement);
             }
@@ -125,6 +160,7 @@
 
             // Set the selected slot details in the modal
             slotDetails.textContent = `${slot}`;
+            document.getElementById("summary-time").textContent = slot;
         }
 
         // Function to select a day and fetch available slots
@@ -135,10 +171,19 @@
 
             const selectedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+            const providerId = document.getElementById("provider-select").value;
+            if (!providerId) {
+                alert("Please choose who you'd like to meet with first.");
+                return;
+            }
+
+            // Update the live booking summary.
+            document.getElementById("summary-date").textContent = selectedDate;
+            document.getElementById("summary-time").textContent = "—";
 
             // Fetch available time slots from the server
             try {
-                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/get-available-slots?date=${selectedDate}`);
+                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/get-available-slots?date=${selectedDate}&provider_id=${providerId}`);
                 if (!response.ok) {
                     const body = await response.json().catch(() => ({}));
                     throw new Error(body.error || `Server returned ${response.status}`);
@@ -210,7 +255,9 @@
 
             // Send the booking details to the server
             try {
-                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/add-booking?first_name=${first_name}&last_name=${last_name}&email_address=${email_address}&date=${date}&start_time=${start_time}`);
+                const provider_id = document.getElementById("provider-select").value;
+                const params = new URLSearchParams({ first_name, last_name, email_address, date, start_time, provider_id });
+                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/add-booking?${params.toString()}`);
 
                 if (!response.ok) {
                     const body = await response.json().catch(() => ({}));
@@ -219,6 +266,25 @@
                 alert("Booking confirmed successfully!");
             } catch (error) {
                 console.error("Error confirming booking:", error);
+                alert("Could not confirm booking: " + error.message);
+            }
+        }
+
+        // Load the list of users a guest can book with.
+        async function loadProviders() {
+            try {
+                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/providers`);
+                if (!response.ok) throw new Error('Failed to load users');
+                const providers = await response.json();
+                const select = document.getElementById("provider-select");
+                providers.forEach(p => {
+                    const opt = document.createElement("option");
+                    opt.value = p.id;
+                    opt.textContent = `${p.first_name} ${p.last_name}`;
+                    select.appendChild(opt);
+                });
+            } catch (error) {
+                console.error("Error loading users:", error);
             }
         }
 
@@ -243,7 +309,30 @@
         // Initialize the calendar on page load
         document.addEventListener("DOMContentLoaded", () => {
             renderCalendar();
+            loadProviders();
             document.getElementById("booking-form").addEventListener("submit", handleBookingSubmit);
+            document.getElementById("provider-select").addEventListener("change", async (e) => {
+                const opt = e.target.options[e.target.selectedIndex];
+                document.getElementById("summary-provider").textContent = e.target.value ? opt.textContent : "—";
+                document.getElementById("summary-date").textContent = "—";
+                document.getElementById("summary-time").textContent = "—";
+                // Reset the slot/confirm views when switching provider.
+                document.getElementById("available-slots").style.display = "block";
+                document.getElementById("confirm-form").style.display = "none";
+                document.getElementById("time-slot-list").innerHTML = "";
+
+                // Load the chosen provider's available weekdays, then re-render.
+                providerDays = null;
+                if (e.target.value) {
+                    try {
+                        const res = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/providers/${e.target.value}/availability`);
+                        if (res.ok) { const a = await res.json(); providerDays = a.days; }
+                    } catch (err) {
+                        console.error("Error loading availability:", err);
+                    }
+                }
+                renderCalendar();
+            });
         });
     </script>
 </body>

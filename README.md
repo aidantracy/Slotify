@@ -52,6 +52,19 @@ We decided that GitHub Pages was the best, easiest option., so we setup the repo
 The backend serves the frontend and the API from the same port, so a single
 `npm start` runs the whole app.
 
+## Accounts & Booking
+- **Sign up** to become a bookable user, or use the seeded demo account —
+  **demo@slotify.local / password123**.
+- **Guests don't need an account.** On the home page they choose who to meet
+  with, pick a day and time, and enter their name and email to book.
+- Bookings appear on the booked user's **My Meetings** page (login required),
+  where that user can edit or cancel them. Passwords are hashed with bcrypt and
+  sessions use JWTs.
+- **Availability:** each user sets their own hours, slot length (15/30/60 min),
+  and working days on the **Profile** page. The booking calendar greys out days
+  a provider doesn't offer, and only their configured time slots are bookable
+  (defaults to 9 AM–5 PM, 30-minute slots, Monday–Friday).
+
 ### Configuration
 - `js/config.js` sets `API_BASE_URL`, the backend the frontend talks to
   (`http://localhost:3000` locally; your deployed URL in production).

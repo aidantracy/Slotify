@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slotify - Profile</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/auth.css">
     <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
     <script>
-        function updateProfileDisplay(event) {
-            event.preventDefault();
-            document.getElementById("display-user-name").textContent = document.getElementById("user-name").value;
-            document.getElementById("display-user-address").textContent = document.getElementById("user-address").value;
-            document.getElementById("display-user-email").textContent = document.getElementById("user-email").value;
-            document.getElementById("display-user-phone").textContent = document.getElementById("user-phone").value;
-            document.getElementById("display-user-company").textContent = document.getElementById("user-company").value;
-        }
+        // Require login before rendering.
+        if (!Auth.isLoggedIn()) window.location.href = 'login.html';
     </script>
 </head>
 <body>
@@ -25,91 +20,142 @@
             <li><a href="../index.html" class="nav-button">Home</a></li>
             <li><a href="eventPage.html" class="nav-button">My Meetings</a></li>
             <li><a href="aboutUs.html" class="nav-button">About Us</a></li>
+            <li><a href="../index.html" id="logout-link" class="nav-button">Log Out</a></li>
         </ul>
     </nav>
-  
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Form Container -->
-        <div class="form-container">
+
+    <div class="auth-container" style="flex-direction: column; gap: 20px;">
+        <div class="auth-card">
             <h1>My Profile</h1>
-            <form action="#" method="post" onsubmit="submitUserForm(event)">
-                <div>
-                    <label for="user-name">Name</label>
-                    <input type="text" id="user-name" name="user-name" required>
-                </div>
-                <div>
-                    <label for="user-address">Address</label>
-                    <textarea id="user-address" name="user-address" rows="3" required></textarea>
-                </div>
-                <div>
-                    <label for="user-email">Email</label>
-                    <input type="email" id="user-email" name="user-email" required>
-                </div>
-                <div>
-                    <label for="user-phone">Phone Number</label>
-                    <input type="tel" id="user-phone" name="user-phone" required>
-                </div>
-                <div>
-                    <label for="user-company">Company</label>
-                    <input type="text" id="user-company" name="user-company">
-                </div>
-                <div>
-                    <button type="submit" class="submit-btn">Update Profile</button>
-                </div>
+            <p><strong>Name:</strong> <span id="profile-name"></span></p>
+            <p><strong>Email:</strong> <span id="profile-email"></span></p>
+            <p class="auth-demo">People can book time with you from the home page's "Book a meeting with" list.</p>
+            <button class="auth-btn" id="logout-btn">Log Out</button>
+        </div>
+
+        <div class="auth-card">
+            <h1>My Availability</h1>
+            <form id="availability-form">
+                <label>Start time
+                    <select id="av-start"></select>
+                </label>
+                <label>End time
+                    <select id="av-end"></select>
+                </label>
+                <label>Slot length
+                    <select id="av-slot">
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">60 minutes</option>
+                    </select>
+                </label>
+                <fieldset class="av-days">
+                    <legend>Available days</legend>
+                    <div id="av-days-boxes" class="av-days-boxes"></div>
+                </fieldset>
+                <button type="submit" class="auth-btn">Save Availability</button>
+                <p class="auth-error" id="av-msg"></p>
             </form>
         </div>
-  
-        <!-- Information Display Container -->
-        <div class="info-container">
-            <h2>Profile Information</h2>
-            <p><strong>Name:</strong> <span id="display-user-name"></span></p>
-            <p><strong>Address:</strong> <span id="display-user-address"></span></p>
-            <p><strong>Email:</strong> <span id="display-user-email"></span></p>
-            <p><strong>Phone Number:</strong> <span id="display-user-phone"></span></p>
-            <p><strong>Company:</strong> <span id="display-user-company"></span></p>
-        </div>
     </div>
+
+    <script>
+        const API = window.SLOTIFY_CONFIG.API_BASE_URL;
+        const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        function hourLabel(h) {
+            if (h === 24) return '12:00 AM';
+            const hr = h % 12 === 0 ? 12 : h % 12;
+            const suffix = h >= 12 && h < 24 ? 'PM' : 'AM';
+            return `${hr}:00 ${suffix}`;
+        }
+
+        // Build the hour dropdowns and weekday checkboxes.
+        function buildControls() {
+            const startSel = document.getElementById('av-start');
+            const endSel = document.getElementById('av-end');
+            for (let h = 0; h <= 23; h++) startSel.add(new Option(hourLabel(h), h));
+            for (let h = 1; h <= 24; h++) endSel.add(new Option(hourLabel(h), h));
+
+            const box = document.getElementById('av-days-boxes');
+            WEEKDAYS.forEach((name, i) => {
+                const label = document.createElement('label');
+                label.className = 'av-day';
+                label.innerHTML = `<input type="checkbox" value="${i}"> ${name}`;
+                box.appendChild(label);
+            });
+        }
+
+        async function loadAvailability() {
+            try {
+                const res = await fetch(`${API}/availability`, { headers: Auth.authHeaders() });
+                if (res.status === 401) { Auth.logout(); window.location.href = 'login.html'; return; }
+                if (!res.ok) throw new Error('Failed to load availability');
+                const a = await res.json();
+                document.getElementById('av-start').value = a.start_hour;
+                document.getElementById('av-end').value = a.end_hour;
+                document.getElementById('av-slot').value = a.slot_minutes;
+                document.querySelectorAll('#av-days-boxes input').forEach((cb) => {
+                    cb.checked = a.days.includes(Number(cb.value));
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API}/me`, { headers: Auth.authHeaders() });
+                if (response.status === 401) { Auth.logout(); window.location.href = 'login.html'; return; }
+                if (!response.ok) throw new Error('Failed to load profile');
+                const user = await response.json();
+                document.getElementById('profile-name').textContent = `${user.first_name} ${user.last_name}`;
+                document.getElementById('profile-email').textContent = user.email_address;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                const user = Auth.getUser();
+                if (user) {
+                    document.getElementById('profile-name').textContent = `${user.first_name} ${user.last_name}`;
+                    document.getElementById('profile-email').textContent = user.email_address;
+                }
+            }
+        }
+
+        document.getElementById('availability-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const msg = document.getElementById('av-msg');
+            msg.style.color = '';
+            msg.textContent = '';
+            const days = [...document.querySelectorAll('#av-days-boxes input:checked')].map((cb) => Number(cb.value));
+            const payload = {
+                start_hour: Number(document.getElementById('av-start').value),
+                end_hour: Number(document.getElementById('av-end').value),
+                slot_minutes: Number(document.getElementById('av-slot').value),
+                days,
+            };
+            try {
+                const res = await fetch(`${API}/availability`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', ...Auth.authHeaders() },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to save');
+                msg.style.color = '#28a745';
+                msg.textContent = 'Availability saved!';
+            } catch (err) {
+                msg.textContent = err.message;
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            Auth.logout();
+            window.location.href = '../index.html';
+        });
+
+        buildControls();
+        loadProfile();
+        loadAvailability();
+    </script>
 </body>
 </html>
-
-<script>
-  async function submitUserForm(event) {
-    event.preventDefault(); 
-
-    const name = document.getElementById("user-name").value;
-    const address = document.getElementById("user-address").value;
-    const email = document.getElementById("user-email").value;
-    const phone = document.getElementById("user-phone").value;
-    const company = document.getElementById("user-company").value;
-
-    document.getElementById("display-user-name").textContent = name;
-    document.getElementById("display-user-address").textContent = address;
-    document.getElementById("display-user-email").textContent = email;
-    document.getElementById("display-user-phone").textContent = phone;
-    document.getElementById("display-user-company").textContent = company;
-
-
-    try {
-      const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/add-user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, address, email, phone, company }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save user data');
-      }
-
-      alert('Profile updated successfully!');
-      console.log('Server response:', result);
-
-      
-    } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred: ' + error.message);
-    }
-  }
-</script>

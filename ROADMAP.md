@@ -4,7 +4,14 @@ A plan to finish Slotify (a YouCanBook.me-style meeting booking app) into a work
 
 ## Progress
 - **Phase 0 (Foundation & cleanup): DONE.** Single backend, one API-base config, secrets in `.env`, quick bugs fixed, dead code removed. The backend also now serves the frontend, so `npm start` runs the whole app on one port.
-- **Database switched from Supabase to SQLite (libSQL).** Local dev uses a SQLite file; production can use Turso's free always-on tier with no code changes. This is why the auth and access-control notes below no longer reference Supabase Auth / Row-Level Security.
+- **Database switched from Supabase to SQLite (libSQL).** Local dev uses a SQLite file; production can use Turso's free always-on tier with no code changes.
+- **Phase 1 (Authentication): DONE.** Signup/login with bcrypt-hashed passwords and JWT sessions (`js/auth.js` on the client, `requireAuth` middleware on the server). Real `login.html` and `signup.html`; Profile and My Meetings now require login.
+- **Phase 2 (Per-user booking): DONE.** The `provider_id = 1` assumption is gone. Guests pick who to meet with from a directory (`GET /providers`) on the home page and book with that specific user; each provider's My Meetings page (`GET /my-bookings`) shows only their own bookings, and edit/cancel enforce ownership.
+- **Booking meetings show up on the booked user's My Meetings page** — the core "book me" behavior now works end to end.
+- **Confirmation emails** are sent to both the guest and the provider on booking (nodemailer; Ethereal preview locally, real SMTP via env).
+- **Per-provider availability: DONE.** Each user sets hours, slot length, and working days on their Profile; the booking calendar greys out days off and only generates their configured slots.
+
+Remaining polish (Phase 3–4 in the plan below): editable profile fields (name/email), a mobile pass, and choosing a single deploy host.
 
 ---
 

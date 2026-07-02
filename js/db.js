@@ -30,6 +30,8 @@ export async function initDb() {
       password      TEXT
     );
 
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email_address);
+
     CREATE TABLE IF NOT EXISTS bookings (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now')),
@@ -50,13 +52,26 @@ export async function initDb() {
       user_id       INTEGER,
       FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     );
+
+    -- Per-provider booking availability. One row per user; sensible defaults
+    -- (9 AM–5 PM, 30-minute slots, Monday–Friday) apply when no row exists.
+    CREATE TABLE IF NOT EXISTS availability (
+      user_id      INTEGER PRIMARY KEY,
+      start_hour   INTEGER NOT NULL DEFAULT 9,
+      end_hour     INTEGER NOT NULL DEFAULT 17,
+      slot_minutes INTEGER NOT NULL DEFAULT 30,
+      days         TEXT NOT NULL DEFAULT '1,2,3,4,5',
+      FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    );
   `);
 
-  // Seed a default provider (id = 1) so the booking flow works before real
-  // accounts exist. This is replaced by real users in the auth phase.
+  // Seed a demo provider (id = 1) so there's an account to log in with and a
+  // provider to book right away. Login: demo@slotify.local / password123
+  // The password below is a bcrypt hash of "password123".
+  const demoHash = '$2b$10$JtEUKwfMK4HZoDboVTXJq.4AlUUNuKcEO.KvaaR6g0lC0BXPOMNOa';
   await db.execute({
-    sql: `INSERT OR IGNORE INTO users (id, first_name, last_name, email_address)
-          VALUES (1, 'Demo', 'Provider', 'demo@slotify.local')`,
-    args: [],
+    sql: `INSERT OR IGNORE INTO users (id, first_name, last_name, email_address, password)
+          VALUES (1, 'Demo', 'Provider', 'demo@slotify.local', ?)`,
+    args: [demoHash],
   });
 }

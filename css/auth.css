@@ -1,0 +1,183 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    background-image: url("../img/gradient-image.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font-family: 'Inter', sans-serif;
+    color: white;
+}
+
+/* Navigation Bar */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 25px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.0);
+}
+
+nav img {
+    height: 35px;
+}
+
+nav ul {
+    display: flex;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin-left: 20px;
+}
+
+.nav-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.1);
+    color: white;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 5px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.nav-button:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Auth card */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100% - 70px);
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+}
+
+.auth-card {
+    background-color: rgba(255, 255, 255, 0.92);
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
+    padding: 2rem;
+    width: 100%;
+    max-width: 380px;
+    color: #333;
+}
+
+.auth-card h1 {
+    margin-top: 0;
+    color: #007BFF;
+    text-align: center;
+}
+
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.auth-card label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #007BFF;
+}
+
+.auth-card input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 1rem;
+    color: #333;
+}
+
+.auth-btn {
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.auth-btn:hover {
+    background-color: #0069d9;
+}
+
+.auth-error {
+    color: #c0392b;
+    margin: 0;
+    font-size: 0.9rem;
+    min-height: 1.2em;
+    text-align: center;
+}
+
+.auth-switch {
+    text-align: center;
+    margin: 1rem 0 0;
+    font-size: 0.9rem;
+}
+
+.auth-switch a {
+    color: #007BFF;
+    font-weight: 600;
+}
+
+.auth-demo {
+    text-align: center;
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: #777;
+}
+
+/* Availability day checkboxes */
+.av-days {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px 12px;
+    margin: 0;
+}
+
+.av-days legend {
+    font-weight: 600;
+    color: #007BFF;
+    font-size: 0.9rem;
+    padding: 0 6px;
+}
+
+.av-days-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+}
+
+.av-days-boxes label {
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.av-days-boxes input {
+    width: auto;
+    padding: 0;
+    margin: 0;
+}

@@ -6,6 +6,11 @@
     <title>Slotify - My Events</title>
     <link rel="stylesheet" href="../css/eventPage.css">
     <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        // Redirect to login before anything renders if not authenticated.
+        if (!Auth.isLoggedIn()) window.location.href = 'login.html';
+    </script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -15,6 +20,7 @@
             <li><a href="../index.html" class="nav-button">Home</a></li>
             <li><a href="profile.html" class="nav-button">Profile</a></li>
             <li><a href="aboutUs.html" class="nav-button">About Us</a></li>
+            <li><a href="../index.html" id="logout-link" class="nav-button">Log Out</a></li>
         </ul>
     </nav>
 
@@ -69,7 +75,7 @@
                 async function loadBookings() {
                     container.innerHTML = '';
                     try {
-                        const response = await fetch(`${API}/get-bookings`);
+                        const response = await fetch(`${API}/my-bookings`, { headers: Auth.authHeaders() });
                         if (!response.ok) throw new Error('Failed to fetch bookings');
                         const bookings = await response.json();
 
@@ -154,7 +160,7 @@
                     try {
                         const response = await fetch(`${API}/bookings/${booking.id}`, {
                             method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', ...Auth.authHeaders() },
                             body: JSON.stringify(updated),
                         });
                         const body = await response.json().catch(() => ({}));
@@ -169,7 +175,7 @@
                 async function cancelBooking(card, booking) {
                     if (!confirm(`Cancel ${booking.first_name} ${booking.last_name}'s booking on ${booking.date}?`)) return;
                     try {
-                        const response = await fetch(`${API}/bookings/${booking.id}`, { method: 'DELETE' });
+                        const response = await fetch(`${API}/bookings/${booking.id}`, { method: 'DELETE', headers: Auth.authHeaders() });
                         const body = await response.json().catch(() => ({}));
                         if (!response.ok) throw new Error(body.error || `Server returned ${response.status}`);
                         card.remove();

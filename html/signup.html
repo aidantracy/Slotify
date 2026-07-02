@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slotify - Log In</title>
+    <title>Slotify - Sign Up</title>
     <link rel="stylesheet" href="../css/auth.css">
     <script src="../js/config.js"></script>
     <script src="../js/auth.js"></script>
@@ -18,38 +18,45 @@
 
     <div class="auth-container">
         <div class="auth-card">
-            <h1>Log In</h1>
-            <form id="login-form">
+            <h1>Sign Up</h1>
+            <form id="signup-form">
+                <label>First name
+                    <input type="text" id="first-name" required>
+                </label>
+                <label>Last name
+                    <input type="text" id="last-name" required>
+                </label>
                 <label>Email
                     <input type="email" id="email" required>
                 </label>
                 <label>Password
-                    <input type="password" id="password" required>
+                    <input type="password" id="password" minlength="6" required>
                 </label>
-                <button type="submit" class="auth-btn">Log In</button>
+                <button type="submit" class="auth-btn">Create Account</button>
                 <p class="auth-error" id="error"></p>
             </form>
-            <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
-            <p class="auth-demo">Demo login: demo@slotify.local / password123</p>
+            <p class="auth-switch">Already have an account? <a href="login.html">Log in</a></p>
         </div>
     </div>
 
     <script>
-        document.getElementById('login-form').addEventListener('submit', async (event) => {
+        document.getElementById('signup-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const errorEl = document.getElementById('error');
             errorEl.textContent = '';
             try {
-                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/login`, {
+                const response = await fetch(`${window.SLOTIFY_CONFIG.API_BASE_URL}/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        email: document.getElementById('email').value,
+                        first_name: document.getElementById('first-name').value.trim(),
+                        last_name: document.getElementById('last-name').value.trim(),
+                        email: document.getElementById('email').value.trim(),
                         password: document.getElementById('password').value,
                     }),
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Login failed.');
+                if (!response.ok) throw new Error(data.error || 'Sign up failed.');
                 Auth.setSession(data.token, data.user);
                 window.location.href = 'eventPage.html';
             } catch (err) {
